@@ -3,29 +3,40 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Clases con líderes de comunidad | Dropi Medellín</title>
+  <title>Dropi se toma Medellín | Clases con líderes de comunidad</title>
   <meta name="description" content="Elige la clase de tu líder de comunidad e inscríbete en Luma. Inauguración de la regional Dropi Medellín.">
-  <meta name="theme-color" content="#15112A">
+  <meta name="theme-color" content="#F26B1D">
 
   <!-- Vista previa al compartir por WhatsApp / redes.
-       Cuando tengas la URL de GitHub Pages, cambia og:url y og:image por rutas absolutas. -->
+       Cuando tengas la URL de GitHub Pages, cambia og:image por una ruta absoluta. -->
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Clases con líderes de comunidad | Dropi Medellín">
-  <meta property="og:description" content="Elige tu clase e inscríbete en Luma.">
+  <meta property="og:title" content="Dropi se toma Medellín">
+  <meta property="og:description" content="Clases con líderes de comunidad. Elige la tuya e inscríbete en Luma.">
   <!-- <meta property="og:image" content="https://TU-USUARIO.github.io/TU-REPO/assets/og.jpg"> -->
 
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wdth,wght@125,900&family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- Fondo: degradado naranja + textura de línea + grano -->
+  <div class="bg" aria-hidden="true">
+    <div class="bg-flores"></div>
+    <div class="bg-ciudad"></div>
+    <div class="bg-grano"></div>
+  </div>
+
   <main class="app">
 
     <header class="head">
-      <h1 class="title" id="title">Clases con líderes de comunidad</h1>
+      <img class="logo" src="assets/logo-dropi.svg" alt="Dropi" width="140" height="46">
+      <h1 class="title">
+        <span class="title-1" id="title1">Dropi se toma</span>
+        <span class="title-2" id="title2">Medellín</span>
+      </h1>
       <p class="subtitle" id="subtitle"></p>
       <p class="date" id="date" hidden></p>
     </header>
@@ -33,19 +44,27 @@
     <section class="wheel-area" aria-label="Líderes de comunidad">
       <div class="wheel" id="wheel">
         <div class="orbit" aria-hidden="true"></div>
+
+        <!-- El robot de Dropi en el centro: sus ojos miran al líder elegido -->
         <div class="hub" id="hub" aria-hidden="true">
-          <img class="hub-logo" id="hubLogo" alt="" hidden>
-          <span class="hub-word" id="hubWord">dropi</span>
-          <span class="hub-city" id="hubCity">Medellín</span>
-          <span class="hub-count" id="hubCount"></span>
+          <div class="robot">
+            <img class="robot-base" src="assets/robot/robot-base.webp" alt="" draggable="false">
+            <div class="robot-visor">
+              <div class="eyes" id="eyes">
+                <img class="eye eye-izq" src="assets/robot/robot-ojo-izq.webp" alt="" draggable="false">
+                <img class="eye eye-der" src="assets/robot/robot-ojo-der.webp" alt="" draggable="false">
+              </div>
+            </div>
+          </div>
         </div>
+
         <div class="nodes" id="nodes"></div>
       </div>
     </section>
 
     <section class="panel" id="panel" aria-live="polite">
       <div class="panel-empty" id="panelEmpty">
-        <p class="empty-lead">Elige un líder para ver su clase y apartar tu cupo en Luma.</p>
+        <p class="empty-lead" id="emptyLead">Elige un líder para ver su clase y apartar tu cupo en Luma.</p>
         <p class="empty-hint" id="emptyHint">Toca cualquier foto de la rueda. También puedes girarla deslizando el dedo.</p>
       </div>
 

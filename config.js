@@ -16,12 +16,11 @@
    ========================================================================== */
 
 window.HUB_CONFIG = {
-  titulo: "Clases con líderes de comunidad",
-  evento: "Inauguración de la regional Dropi Medellín",
+  tituloLinea1: "Dropi se toma",
+  tituloLinea2: "Medellín",
+  subtitulo: "Clases con líderes de comunidad en la inauguración de la regional",
   fecha: "",                 // ej: "Sábado 24 de octubre"
-  ciudad: "Medellín",
   rol: "Líder de comunidad", // texto bajo el nombre en la tarjeta
-  logo: "assets/logo-dropi.svg", // si el archivo no existe, se muestra el texto "dropi"
 
   lideres: [
     { nombre: "Líder 1",  clase: "Título de la clase 1",  hora: "", sala: "", descripcion: "", foto: "", luma: "" },

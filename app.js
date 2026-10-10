@@ -70,16 +70,10 @@
   };
 
   /* ---------- textos generales ---------- */
-  $("#title").textContent = C.titulo || "Clases con líderes de comunidad";
-  $("#subtitle").textContent = C.evento || "";
+  if (C.tituloLinea1) $("#title1").textContent = C.tituloLinea1;
+  if (C.tituloLinea2) $("#title2").textContent = C.tituloLinea2;
+  $("#subtitle").textContent = C.subtitulo || "";
   if (C.fecha) { const d = $("#date"); d.textContent = C.fecha; d.hidden = false; }
-  $("#hubCity").textContent = C.ciudad || "Medellín";
-
-  if (C.logo) {
-    const logo = $("#hubLogo");
-    logo.onload = () => { logo.hidden = false; $("#hubWord").hidden = true; logo.alt = "Dropi"; };
-    logo.src = C.logo;
-  }
 
   $("#emptyHint").textContent = canHover
     ? "Haz clic en cualquier foto de la rueda. También puedes girarla arrastrándola."
@@ -98,10 +92,9 @@
       })
   );
   const N = items.length;
-  $("#hubCount").textContent = N === 1 ? "1 clase" : `${N} clases`;
 
   if (!N) {
-    panelEmpty.querySelector(".empty-lead").textContent =
+    $("#emptyLead").textContent =
       "Agrega a los líderes en config.js para ver la rueda.";
     return;
   }
@@ -153,13 +146,20 @@
   let lastRadius = null;
   const step = 360 / N;
 
+  // Ojos del robot
+  const eyesEl = $("#eyes");
+  const look = { x: 0, y: 0 };
+  const pointer = { x: 0, y: 0, t: -1e9 };
+  let scanIndex = Math.floor(Math.random() * N);
+  let scanTime = 0;
+
   function measure() {
     const w = wheel.clientWidth;
     const nodeW = nodes[0].offsetWidth || 56;
     const labelPad = mqDesktop.matches ? 38 : 18;
     radius = Math.max(60, w / 2 - nodeW / 2 - labelPad);
     const maxHub = 2 * (radius - nodeW / 2) - (mqDesktop.matches ? 44 : 24);
-    const hub = Math.max(90, Math.min(maxHub, radius * (mqDesktop.matches ? 1.12 : 1.2)));
+    const hub = Math.max(90, Math.min(maxHub, radius * (mqDesktop.matches ? 1.05 : 1.12)));
     wheel.style.setProperty("--r", `${radius}px`);
     wheel.style.setProperty("--hub", `${hub}px`);
   }
@@ -196,8 +196,50 @@
       rot += SPEED * dt;
     }
     layout();
+    updateEyes(now, dt);
     requestAnimationFrame(tick);
   }
+
+  // Mira al líder elegido; si no hay, sigue el mouse o va mirando a cada líder
+  function nodeDir(i) {
+    const a = ((rot + i * step - 90) * Math.PI) / 180;
+    return { x: Math.cos(a), y: Math.sin(a) };
+  }
+
+  function updateEyes(now, dt) {
+    let tx = 0, ty = 0;
+    if (!mqReduce.matches) {
+      if (selected >= 0) {
+        ({ x: tx, y: ty } = nodeDir(selected));
+      } else if (now - pointer.t < 2500) {
+        const r = wheel.getBoundingClientRect();
+        const dx = pointer.x - (r.left + r.width / 2);
+        const dy = pointer.y - (r.top + r.height / 2);
+        const d = Math.hypot(dx, dy) || 1;
+        const k = Math.min(1, d / (r.width / 2));
+        tx = (dx / d) * k;
+        ty = (dy / d) * k;
+      } else {
+        if (now - scanTime > 2600) {
+          scanTime = now;
+          scanIndex = (scanIndex + 3 + Math.floor(Math.random() * 5)) % N;
+        }
+        ({ x: tx, y: ty } = nodeDir(scanIndex));
+      }
+    }
+    const f = 1 - Math.exp(-dt * 6);
+    look.x += (tx - look.x) * f;
+    look.y += (ty - look.y) * f;
+    eyesEl.style.setProperty("--lx", look.x.toFixed(3));
+    eyesEl.style.setProperty("--ly", look.y.toFixed(3));
+  }
+
+  window.addEventListener("pointermove", (e) => {
+    if (e.pointerType !== "mouse") return;
+    pointer.x = e.clientX;
+    pointer.y = e.clientY;
+    pointer.t = performance.now();
+  }, { passive: true });
 
   /* ---------- arrastrar para girar ---------- */
   const angleAt = (x, y) => (Math.atan2(y - drag.cy, x - drag.cx) * 180) / Math.PI;

@@ -3,10 +3,10 @@
 Página única con los 11 líderes de comunidad repartidos en una rueda alrededor del robot de Dropi. Nadie queda de último: el orden se sortea en cada visita y la rueda gira sola. Los ojos del robot miran al líder que la persona elige.
 
 ## Editar el contenido
-Todo se cambia en `config.js`: nombre, título de la clase, enlace de Luma, hora, sala, descripción y foto de cada líder.
+Todo se cambia en `config.js`: nombre, título de la clase, enlace de Luma, fecha, hora, descripción y foto de cada líder.
 
-- **Fotos:** guárdalas en `assets/fotos/` (cuadradas, 400×400 px, .jpg o .webp) y pon la ruta en `foto`, por ejemplo `"assets/fotos/maria.jpg"`. Sin foto se muestran las iniciales.
-- **Textos del encabezado:** `tituloLinea1`, `tituloLinea2`, `subtitulo` y `fecha` en `config.js`.
+- **Fotos:** la rueda usa recortes cuadrados centrados en la cara, en `assets/fotos/avatares/` (400×400 px, .webp, ~15 KB cada uno). Las piezas originales de Luma siguen en `assets/fotos/` pero la página ya no las carga; se pueden borrar para aligerar el repositorio. Para un líder nuevo, recorta un cuadrado centrado en la cara y pon la ruta en `foto`.
+- **Textos del encabezado:** `tituloLinea1`, `tituloLinea2`, `subtitulo` y `fechaGeneral` (opcional) en `config.js`.
 - **Tusker Grotesk:** para que quede igual a las piezas, convierte a .woff2 la versión ancha y pesada (la de "MEDELLÍN") y guárdala como `fonts/TuskerGrotesk-Ancha.woff2`, y la condensada (la de "DONDE EL ECOMMERCE FLORECE") como `fonts/TuskerGrotesk-Angosta.woff2`. Mientras no estén, se usan Archivo Expanded Black y Anton de Google Fonts.
 - **Colores:** en `styles.css`, bloque `:root`.
 - **Fondo:** degradado naranja + texturas de línea sacadas de los backings (`assets/textura-medellin.webp` y `assets/textura-flores-arriba.webp`) + grano. La intensidad se ajusta con `opacity` en `.bg-ciudad`, `.bg-flores` y `.bg-grano`.

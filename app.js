@@ -66,18 +66,60 @@
 
   const icon = {
     clock: '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
-    pin: '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="9.5" r="2.5" fill="currentColor"/></svg>'
+    calendar: '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
   };
 
   /* ---------- textos generales ---------- */
   if (C.tituloLinea1) $("#title1").textContent = C.tituloLinea1;
   if (C.tituloLinea2) $("#title2").textContent = C.tituloLinea2;
   $("#subtitle").textContent = C.subtitulo || "";
-  if (C.fecha) { const d = $("#date"); d.textContent = C.fecha; d.hidden = false; }
+  const fechaGeneral = C.fechaGeneral || C.fecha;
+  if (fechaGeneral) { const d = $("#date"); d.textContent = fechaGeneral; d.hidden = false; }
 
-  $("#emptyHint").textContent = canHover
-    ? "Haz clic en cualquier foto de la rueda. También puedes girarla arrastrándola."
-    : "Toca cualquier foto de la rueda. También puedes girarla deslizando el dedo.";
+  // Ajusta el tamaño del título al ancho disponible.
+  // Celular: las dos líneas quedan del mismo ancho que el subtítulo (bloque "justificado").
+  // Escritorio: "DROPI SE TOMA" ocupa el 76% del bloque y "MEDELLÍN" el 90%.
+  const headEl = $(".head");
+  const titleEls = [$("#title1"), $("#title2")];
+  // Ancho real del renglón más largo del subtítulo
+  function subtitleWidth() {
+    const sub = $("#subtitle");
+    if (!sub.textContent.trim()) return 0;
+    const range = document.createRange();
+    range.selectNodeContents(sub);
+    return Math.max(0, ...Array.from(range.getClientRects(), (r) => r.width));
+  }
+
+  function fitTitle() {
+    const desktop = mqDesktop.matches;
+    const max = desktop ? headEl.clientWidth : (subtitleWidth() || headEl.clientWidth);
+    if (!max) return;
+    const ratios = desktop ? [0.762, 0.905] : [1, 1];
+    titleEls.forEach((el, k) => {
+      el.style.fontSize = "";
+      const w = el.getBoundingClientRect().width;
+      if (!w) return;
+      const fs = parseFloat(getComputedStyle(el).fontSize);
+      el.style.fontSize = `${(fs * max * ratios[k]) / w}px`;
+    });
+  }
+  fitTitle();
+  // Se vuelve a ajustar cuando termina de cargar la tipografía (Tusker cambia el ancho)
+  if (document.fonts) {
+    if (document.fonts.ready) document.fonts.ready.then(fitTitle);
+    document.fonts.addEventListener?.("loadingdone", fitTitle);
+  }
+  window.addEventListener("load", fitTitle);
+  let fitRaf = 0;
+  window.addEventListener("resize", () => {
+    cancelAnimationFrame(fitRaf);
+    fitRaf = requestAnimationFrame(fitTitle);
+  });
+
+  // Instrucción: "clic" en computador, "tap" en pantallas táctiles
+  $("#emptyHint").innerHTML = canHover
+    ? '<span class="l">Haz clic en la foto del líder Dropi</span> <span class="l">y agéndate en su clase.</span>'
+    : '<span class="l">Haz tap en la foto del líder Dropi</span> <span class="l">y agéndate en su clase.</span>';
 
   /* ---------- datos ---------- */
   const usedIds = new Set();
@@ -92,6 +134,17 @@
       })
   );
   const N = items.length;
+
+  // Nombre corto para la etiqueta en celular: el primer nombre, o el primer
+  // nombre + inicial si hay nombres repetidos (ej: "Juan M." y "Juan C.")
+  const firstCount = {};
+  items.forEach((it) => { const f = firstName(it.nombre); firstCount[f] = (firstCount[f] || 0) + 1; });
+  const shortName = (name) => {
+    const f = firstName(name);
+    if (firstCount[f] < 2) return f;
+    const second = String(name).trim().split(/\s+/)[1];
+    return second ? `${f} ${second[0]}.` : f;
+  };
 
   if (!N) {
     $("#emptyLead").textContent =
@@ -116,7 +169,7 @@
     full.textContent = item.nombre;
     const short = document.createElement("span");
     short.className = "short";
-    short.textContent = firstName(item.nombre);
+    short.textContent = item.corto || shortName(item.nombre);
     label.append(full, short);
     b.appendChild(label);
 
@@ -297,7 +350,7 @@
 
     const chips = $("#cardChips");
     chips.replaceChildren();
-    [[it.hora, icon.clock], [it.sala, icon.pin]].forEach(([text, svg]) => {
+    [[it.fecha, icon.calendar], [it.hora, icon.clock]].forEach(([text, svg]) => {
       if (!text) return;
       const c = document.createElement("span");
       c.className = "chip";
@@ -318,7 +371,31 @@
     }
   }
 
+  // En escritorio el bloque de textos está centrado verticalmente: al cambiar
+  // el panel, el encabezado se desliza suave a su nueva posición
+  function smoothHead(change) {
+    if (!mqDesktop.matches || mqReduce.matches) { change(); return; }
+    const before = headEl.getBoundingClientRect().top;
+    change();
+    const delta = before - headEl.getBoundingClientRect().top;
+    if (Math.abs(delta) > 1) {
+      // Se animan los textos uno por uno y no el <header> completo: si el header
+      // tuviera un transform, el logo (que en escritorio va con position:absolute
+      // en la esquina) se reubicaría dentro del header durante la animación.
+      headEl.querySelectorAll(":scope > :not(.logo)").forEach((el) => {
+        el.animate(
+          [{ transform: `translateY(${delta}px)` }, { transform: "none" }],
+          { duration: 380, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" }
+        );
+      });
+    }
+  }
+
   function select(i, focusNode = false) {
+    smoothHead(() => selectNow(i, focusNode));
+  }
+
+  function selectNow(i, focusNode) {
     selected = i;
     nodes.forEach((b, j) => {
       b.classList.toggle("is-active", j === i);
@@ -345,6 +422,10 @@
   }
 
   function clearSelection() {
+    smoothHead(clearNow);
+  }
+
+  function clearNow() {
     const prev = selected;
     selected = -1;
     nodes.forEach((b) => { b.classList.remove("is-active"); b.setAttribute("aria-pressed", "false"); });
@@ -359,30 +440,6 @@
   $("#prevBtn").addEventListener("click", () => select((selected - 1 + N) % N));
   $("#nextBtn").addEventListener("click", () => select((selected + 1) % N));
 
-  const shareBtn = $("#shareBtn");
-  let shareTimer = null;
-  const flash = (text) => {
-    shareBtn.textContent = text;
-    clearTimeout(shareTimer);
-    shareTimer = setTimeout(() => { shareBtn.textContent = "Compartir esta clase"; }, 2200);
-  };
-
-  shareBtn.addEventListener("click", async () => {
-    const it = items[selected];
-    if (!it) return;
-    const url = `${location.origin}${location.pathname}#${it.id}`;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: `${it.clase} | ${it.nombre}`, text: `Clase de ${it.nombre}: ${it.clase}`, url });
-        return;
-      }
-      await navigator.clipboard.writeText(url);
-      flash("Enlace copiado");
-    } catch (err) {
-      if (err && err.name === "AbortError") return;
-      flash("Copia el enlace de la barra");
-    }
-  });
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && selected >= 0) clearSelection();

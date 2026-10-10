@@ -43,7 +43,7 @@
 
 @media (min-width: 900px) {
   :root {
-    --node: clamp(60px, 8.5vh, 90px);
+    --node: clamp(60px, 9vh, 98px);
     --label-w: 132px;
   }
 }
@@ -69,6 +69,8 @@ body {
 }
 
 button { font: inherit; color: inherit; }
+
+[hidden] { display: none !important; } /* que ningún display de las reglas le gane a "hidden" */
 
 /* ---------- Fondo ---------- */
 
@@ -135,47 +137,75 @@ button { font: inherit; color: inherit; }
   margin: 0 auto;
   padding: 20px 16px 28px;
   display: grid;
+  grid-template-columns: minmax(0, 1fr); /* evita que un texto largo ensanche la columna */
   grid-template-areas: "head" "wheel" "panel";
   justify-items: center;
   row-gap: 14px;
 }
 
-.head { grid-area: head; text-align: center; max-width: 34rem; display: flex; flex-direction: column; align-items: center; }
+.head { grid-area: head; width: 100%; text-align: center; max-width: 34rem; display: flex; flex-direction: column; align-items: center; }
 .wheel-area { grid-area: wheel; width: 100%; display: grid; place-items: center; }
 .panel { grid-area: panel; width: 100%; max-width: 30rem; min-height: 236px; }
 
 @media (min-width: 900px) {
+  /* Rueda + bloque de texto centrados como un solo grupo:
+     mismo margen a la izquierda y a la derecha */
   .app {
+    --wheel-size: min(calc(100dvh - 40px), 52vw, 900px);
+    --col: max(300px, min(480px, 30vw)); /* ancho del bloque de textos: todas sus medidas salen de aquí */
+    max-width: none;
     height: 100dvh;
     min-height: 640px;
-    padding: 32px 48px;
-    grid-template-columns: minmax(0, 1.2fr) minmax(360px, 470px);
-    grid-template-rows: 1fr auto auto 1fr;
+    padding: 20px 48px;
+    grid-template-columns: var(--wheel-size) var(--col);
+    /* la fila del panel puede encogerse si la pantalla es baja (ver .card-desc) */
+    grid-template-rows: 1fr auto minmax(0, auto) 1fr;
     grid-template-areas:
       "wheel ."
       "wheel head"
       "wheel panel"
       "wheel .";
-    column-gap: clamp(32px, 5vw, 72px);
-    row-gap: 24px;
+    justify-content: center;
+    column-gap: clamp(56px, 7.5vw, 140px);
+    row-gap: 0; /* la separación título-panel va en .panel (el gap también se sumaría a las filas vacías) */
     justify-items: start;
     align-items: center;
   }
   .head { text-align: left; align-items: flex-start; }
   .wheel-area { align-self: stretch; }
-  .panel { min-height: 400px; align-self: start; }
+  .head { max-width: none; }
+  /* sin altura mínima: el bloque de textos queda centrado verticalmente con su contenido real */
+  .panel {
+    margin-top: calc(var(--col) * 0.1);
+    min-height: 0;
+    max-width: none;
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+  }
 }
 
 /* ---------- Encabezado ---------- */
 
-.logo { height: 28px; width: auto; margin-bottom: 12px; }
+.logo { height: 28px; width: auto; margin-bottom: 26px; }
 
 .title {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  gap: 3.6vw; /* celular: separación entre "DROPI SE TOMA" y "MEDELLÍN" (escritorio tiene su propio gap) */
   font-weight: 400;
   text-transform: uppercase;
   text-shadow: 0 6px 24px rgba(var(--sombra), 0.28);
+}
+
+/* app.js ajusta el tamaño de cada línea al ancho disponible:
+   en celular solo la reduce si no cabe; en escritorio las dos líneas
+   llenan el ancho del bloque y quedan del mismo ancho */
+.title-1,
+.title-2 {
+  white-space: nowrap;
+  text-box: trim-both cap alphabetic; /* recorta el aire de la fuente arriba y abajo */
 }
 
 .title-1 {
@@ -187,7 +217,6 @@ button { font: inherit; color: inherit; }
 
 .title-2 {
   font-family: var(--f-ancha);
-  font-weight: 900;
   font-stretch: 125%;
   font-size: clamp(2.4rem, 12.4vw, 3.8rem);
   line-height: 0.88;
@@ -211,17 +240,33 @@ button { font: inherit; color: inherit; }
 }
 
 @media (min-width: 900px) {
-  .logo { height: 40px; margin-bottom: 18px; }
-  .title-1 { font-size: clamp(2.3rem, 3.4vw, 3.4rem); }
-  .title-2 { font-size: clamp(2.9rem, 4.3vw, 4.4rem); }
-  .subtitle { font-size: 1.1rem; margin-top: 14px; }
+  /* En escritorio el logo va en la esquina superior izquierda de la página */
+  .logo {
+    position: absolute;
+    top: calc(28px + env(safe-area-inset-top, 0px));
+    left: calc(40px + env(safe-area-inset-left, 0px));
+    height: 40px;
+    margin: 0;
+  }
+  /* Diagramación de escritorio: proporciones relativas al ancho del bloque (--col).
+     app.js ajusta "DROPI SE TOMA" al 76% y "MEDELLÍN" al 90% de ese ancho */
+  .title { align-items: flex-start; gap: calc(var(--col) * 0.045); }
+  .title-1 { font-size: 5rem; }   /* tamaño de partida; app.js lo ajusta al ancho */
+  .title-2 { font-size: 5rem; }
+  .subtitle {
+    margin-top: calc(var(--col) * 0.075);
+    font-size: calc(var(--col) * 0.052);
+    line-height: 1.3;
+    white-space: pre-line; /* respeta el salto de línea de config.js */
+    text-wrap: wrap;
+  }
 }
 
 /* ---------- Rueda ---------- */
 
 .wheel {
   position: relative;
-  width: clamp(260px, min(92vw, calc(100dvh - 360px)), 440px);
+  width: clamp(260px, min(100%, calc(100dvh - 360px)), 440px);
   aspect-ratio: 1;
   touch-action: pan-y; /* deslizar horizontal gira la rueda; vertical hace scroll */
   user-select: none;
@@ -232,7 +277,7 @@ button { font: inherit; color: inherit; }
 .wheel.is-dragging { cursor: grabbing; }
 
 @media (min-width: 900px) {
-  .wheel { width: min(100%, calc(100dvh - 64px), 720px); }
+  .wheel { width: var(--wheel-size); }
 }
 
 .orbit {
@@ -430,7 +475,9 @@ button { font: inherit; color: inherit; }
 
 @media (min-width: 900px) {
   .panel-empty { text-align: left; padding: 0; }
-  .empty-lead { font-size: 1.35rem; max-width: 24ch; }
+  .empty-lead { font-size: calc(var(--col) * 0.067); line-height: 1.25; max-width: none; text-wrap: wrap; }
+  .empty-hint { margin-top: calc(var(--col) * 0.05); font-size: calc(var(--col) * 0.036); font-weight: 500; line-height: 1.45; text-wrap: wrap; }
+  .panel-empty .l { display: block; } /* cada renglón en su propia línea */
 }
 
 .card {
@@ -452,7 +499,25 @@ button { font: inherit; color: inherit; }
 }
 
 @media (min-width: 900px) {
-  .card { padding: 28px; border-radius: 28px; }
+  .card {
+    padding: 24px 26px;
+    border-radius: 28px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    max-height: 100%;
+  }
+  .card > * { flex: none; }
+  /* si no cabe todo en pantalla, solo la descripción hace scroll dentro de la tarjeta */
+  .card > .card-desc {
+    flex: 0 1 auto;
+    min-height: 3em;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+    padding-right: 6px;
+  }
 }
 
 .card-head { display: flex; align-items: center; gap: 12px; }
@@ -483,8 +548,11 @@ button { font: inherit; color: inherit; }
 
 .card-close:hover { background: rgba(255, 255, 255, 0.18); }
 
+
+
+
 .card-title {
-  margin: 16px 0 10px;
+  margin: 16px 0 18px;
   font-family: var(--f-angosta);
   font-weight: 400;
   font-size: clamp(1.8rem, 7.4vw, 2.4rem);
@@ -495,7 +563,7 @@ button { font: inherit; color: inherit; }
 }
 
 @media (min-width: 900px) {
-  .card-title { font-size: clamp(2.3rem, 3.2vw, 3rem); margin-top: 20px; }
+  .card-title { font-size: max(1.6rem, calc(var(--col) * 0.075)); margin-top: 18px; }
 }
 
 .card-desc {
@@ -549,7 +617,8 @@ button { font: inherit; color: inherit; }
 
 .card-nav {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto auto;
+  justify-content: space-between;
   gap: 8px;
   margin-top: 10px;
 }
@@ -574,6 +643,12 @@ button { font: inherit; color: inherit; }
   outline-offset: 2px;
 }
 
+@media (min-width: 900px) {
+  /* En escritorio se quitan anterior/siguiente para que la tarjeta sea más compacta
+     (se navega con la rueda o las flechas del teclado) */
+  .card-nav { display: none; }
+  .btn-primary { padding: 15px 20px; }
+}
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
